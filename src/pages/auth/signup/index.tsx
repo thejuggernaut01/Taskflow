@@ -1,24 +1,23 @@
 import { useForm } from 'react-hook-form';
-import { loginSchema, LoginType } from '@/validations/auth.validation';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { login as loginUser } from '@/services/auth.service';
-import { useMutation } from '@tanstack/react-query';
-import InputErrorWrapper from '@/components/custom/input-error-wrapper';
+import { SignupType, signupSchema } from '@/validations/auth.validation';
+
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/custom/password-input';
-import { Button } from '@/components/ui/button';
+import InputErrorWrapper from '@/components/custom/input-error-wrapper';
+import { useMutation } from '@tanstack/react-query';
+import { signup } from '@/services/auth.service';
 import { Link, useNavigate } from 'react-router-dom';
-import { useCurrentUserState } from '@/stores/user.store';
-import { useAuth } from '@/guard/auth-guard';
 import { toast } from 'sonner';
 
-const Login = () => {
+const Signup = () => {
   const navigate = useNavigate();
-  const { setCurrentUser } = useCurrentUserState();
-  const { login } = useAuth();
 
   const defaultValues = {
     email: '',
+    firstName: '',
+    lastName: '',
     password: '',
   };
 
@@ -27,38 +26,33 @@ const Login = () => {
     register,
     handleSubmit,
     reset,
-  } = useForm<LoginType>({
-    resolver: zodResolver(loginSchema),
+  } = useForm<SignupType>({
+    resolver: zodResolver(signupSchema),
     mode: 'onChange',
     reValidateMode: 'onChange',
     defaultValues: defaultValues,
   });
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: loginUser,
+  const { mutate, isPending } = useMutation({
+    mutationFn: signup,
     onSuccess: (response) => {
-      if (response.status === 200 || response.status === 201) {
-        const { accessToken, createdAt, updatedAt, ...user } =
-          response.data.data;
-        sessionStorage.setItem('session-token', accessToken);
-        setCurrentUser(user);
-        login();
-        toast.success('Success', {
-          description: response?.data.message,
-        });
-        reset();
-        navigate(`/dashboard`);
-      }
+      toast.success('Success', {
+        description: response?.data.message,
+      });
+      reset();
+      navigate(`/login`);
     },
   });
 
-  const onSubmit = async (formValues: LoginType) => {
+  const onSubmit = async (formValues: SignupType) => {
     const data = {
       email: formValues.email,
+      firstName: formValues.firstName,
+      lastName: formValues.lastName,
       password: formValues.password,
     };
 
-    mutateAsync(data);
+    mutate(data);
   };
 
   return (
@@ -66,8 +60,8 @@ const Login = () => {
       <main className="lg:w-full lg:flex">
         <div className="relative flex-1 hidden lg:block">
           <img
-            src="https://images.unsplash.com/photo-1611224885990-ab7363d1f2a9?q=80&w=1339&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-            alt="Log in to your account"
+            src="https://images.unsplash.com/photo-1512758017271-d7b84c2113f1?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+            alt="Signup in to your account"
             width={500}
             height={500}
             className="absolute object-cover w-full h-screen"
@@ -77,22 +71,29 @@ const Login = () => {
         <div className="flex flex-col justify-center flex-1 h-screen">
           <div className="w-[90%] mx-auto">
             <h1 className="sm:text-[24px] font-bold text-lg">
-              Login in to your account
+              Create your account
             </h1>
             <p className="text-sm font-semibold sm:text-base">
-              {"Don't have an account?"}{' '}
-              <Link to="/signup" className="font-medium text-blue-600">
-                Sign Up
+              Have an account?{' '}
+              <Link
+                to="/"
+                className="font-medium text-primary focus-visible:outline-primary"
+              >
+                Login
               </Link>
             </p>
 
             <form onSubmit={handleSubmit(onSubmit)} className="mt-5 space-y-4">
+              <InputErrorWrapper error={errors.firstName?.message}>
+                <Input placeholder="First name" {...register('firstName')} />
+              </InputErrorWrapper>
+
+              <InputErrorWrapper error={errors.lastName?.message}>
+                <Input placeholder="Last name" {...register('lastName')} />
+              </InputErrorWrapper>
+
               <InputErrorWrapper error={errors.email?.message}>
-                <Input
-                  type="email"
-                  placeholder="Email address"
-                  {...register('email')}
-                />
+                <Input placeholder="Email address" {...register('email')} />
               </InputErrorWrapper>
 
               <InputErrorWrapper error={errors.password?.message}>
@@ -105,7 +106,7 @@ const Login = () => {
                 isSubmitting={isPending}
                 disabled={isPending}
               >
-                Login
+                Create your account
               </Button>
             </form>
           </div>
@@ -115,4 +116,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Signup;

@@ -1,6 +1,6 @@
 import { useCurrentUserState } from '@/stores/user.store';
 import { createContext, ReactNode, useContext, useEffect } from 'react';
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useSessionStorage } from 'usehooks-ts';
 
 interface AuthContextType {
@@ -42,20 +42,22 @@ const AuthGuard = () => {
   const { isAuthenticated } = useAuth();
   const { currentUser } = useCurrentUserState();
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Clear session storage on page reload
   useEffect(() => {
-    const isAuthRoute = ['/login', '/'].includes(location.pathname);
-    if (isAuthRoute) {
-      sessionStorage.clear();
+    const isAuthRoute = ['/signup', '/'].includes(location.pathname);
+
+    if (isAuthenticated && isAuthRoute) {
+      navigate('/dashboard');
     }
+
+    // if (isAuthRoute) {
+    //   logout();
+    // }
   }, [location.pathname]);
 
-  return isAuthenticated && currentUser?.id ? (
-    <Outlet />
-  ) : (
-    <Navigate to="/login" />
-  );
+  return isAuthenticated && currentUser?.id ? <Outlet /> : <Navigate to="/" />;
 };
 
 export default AuthGuard;

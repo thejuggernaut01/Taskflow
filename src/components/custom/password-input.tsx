@@ -16,7 +16,7 @@ const PasswordInput = React.forwardRef<HTMLInputElement, InputProps>(
           type={toggle ? 'text' : 'password'}
           id="password"
           className={cn(
-            'flex h-12 w-full rounded-lg border border-input px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-inactive outline-2 outline-primary focus-visible:outline-primary pl-4 md:text-base placeholder:text-sm text-secondary',
+            'flex h-12 w-full rounded-lg border border-input px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-inactive outline-2 outline-primary focus-visible:outline-primary pl-4 md:text-base placeholder:text-sm text-gray-800',
             className
           )}
           ref={ref}

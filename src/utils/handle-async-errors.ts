@@ -1,5 +1,6 @@
 import { ApiResponse } from '@/types/auth';
 import { toastError } from '@/utils';
+import { toast } from 'sonner';
 
 const handleAsyncErrors = async (error: unknown) => {
   const castedError = error as ApiResponse;
@@ -14,11 +15,18 @@ const handleAsyncErrors = async (error: unknown) => {
 
   // when error message is an array
   // display first error in the array
-  if (typeof errorMessage === 'object')
-    return toastError(castedError.response?.data.message[0]);
+  if (typeof errorMessage === 'object') {
+    toast.error('Error', {
+      description: castedError.response?.data.message[0],
+    });
+    return;
+  }
 
   // when error message is a string
-  return toastError(castedError.response?.data.message);
+  toast.error('Error', {
+    description: castedError.response?.data.message,
+  });
+  return;
 };
 
 export default handleAsyncErrors;

@@ -1,4 +1,4 @@
-interface IENVIRONMENT {  
+interface IENVIRONMENT {
   BASE_URL: {
     API: string;
   };

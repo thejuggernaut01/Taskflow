@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import { User } from '@/types/user';
 
 const defaultUser: User = {
-  id: '',
+  id: 0,
   firstName: '',
   lastName: '',
   email: '',

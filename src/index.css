@@ -281,3 +281,16 @@
     break-after: page;
   }
 }
+
+@keyframes custom-rotation {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loader-animation {
+  animation: custom-rotation 1s linear infinite;
+}

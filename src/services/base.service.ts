@@ -1,6 +1,6 @@
 import axios, { AxiosError, type AxiosInstance } from 'axios';
-import { toastError } from '../utils';
 import { ENVIRONMENTS } from '@/config/environment';
+import { toast } from 'sonner';
 
 export type StandardResponse<T> = {
   data: T;
@@ -26,7 +26,10 @@ export const errorHandler = (
   // Check if the error is due to a network issue (e.g., no response received)
   if (!error.response) {
     console.error('Network Error:', error.message);
-    toastError('Network error. Please check your internet connection.');
+    toast.error('Error', {
+      description: 'Network error. Please check your internet connection.',
+    });
+
     return Promise.reject({
       message: 'Network error. Please check your internet connection.',
       status: 'NETWORK_ERROR',
@@ -52,7 +55,9 @@ export const errorHandler = (
     : errorResponse?.data?.message || 'An error occurred. Please try again.';
 
   // Show the toast notification for the error message
-  toastError(errorMessage);
+  toast.error('Error', {
+    description: errorMessage,
+  });
 
   // Propagate the error for further handling if needed
   return Promise.reject(error);
