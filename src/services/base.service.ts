@@ -14,7 +14,7 @@ export type ErrorResponse = {
 };
 
 const api: AxiosInstance = axios.create({
-  baseURL: ENVIRONMENTS.BASE_URL.API,
+  baseURL: `${ENVIRONMENTS.BASE_URL.API}/api/v1`,
   headers: {
     'Content-Type': 'application/json',
   },

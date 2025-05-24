@@ -7,7 +7,6 @@ const defaultUser: User = {
   firstName: '',
   lastName: '',
   email: '',
-  
 };
 
 const useCurrentUserStore = create(

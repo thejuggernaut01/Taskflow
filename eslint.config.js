@@ -33,6 +33,7 @@ export default [
       '@typescript-eslint/no-unused-vars': 'off',
       'react-refresh/only-export-components': 'off',
       'react-hooks/exhaustive-deps': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
       'prettier/prettier': [
         'error',
         {
