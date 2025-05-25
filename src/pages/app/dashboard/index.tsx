@@ -367,7 +367,7 @@ export default function Home() {
 
       {isCreateTaskOpen && (
         <Dialog open={isCreateTaskOpen} onOpenChange={setIsCreateTaskOpen}>
-          <DialogContent className="sm:max-w-lg mx-4">
+          <DialogContent className="w-[90%] md:max-w-lg mx-auto">
             <DialogHeader>
               <DialogTitle>Create New Task</DialogTitle>
             </DialogHeader>

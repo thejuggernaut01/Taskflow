@@ -1,7 +1,8 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { ITask } from '@/interface/task.interface';
-import BaseHelper from '@/utils/helper';
+
+import { format } from 'date-fns';
 import { Calendar, Edit, Flag, Trash } from 'lucide-react';
 
 type TaskCardProps = {
@@ -62,7 +63,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
             <div className="flex items-center text-xs text-gray-500">
               <Calendar className="w-3 h-3 mr-1" />
               <span className="truncate">
-                {BaseHelper.formatDateWithTime(task.dueDate)}
+                {format(task.dueDate, 'dd/mm/yyyy')}
               </span>
             </div>
           </div>
