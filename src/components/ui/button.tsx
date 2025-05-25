@@ -70,8 +70,9 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         {...props}
       >
-        {' '}
-        {isSubmitting ? <Loader /> : children}
+        <div className="flex items-center gap-x-2">
+          {isSubmitting && <Loader />} {children}
+        </div>
       </Comp>
     );
   }

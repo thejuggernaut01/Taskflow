@@ -39,25 +39,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 };
 
 const AuthGuard = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
   const { currentUser } = useCurrentUserState();
+
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Clear session storage on page reload
-  useEffect(() => {
-    const isAuthRoute = ['/signup', '/'].includes(location.pathname);
+  const publicPaths = ['/', '/signup'];
+  const isPublic = publicPaths.includes(location.pathname);
 
-    if (isAuthenticated && isAuthRoute) {
+  useEffect(() => {
+    if (isAuthenticated && isPublic && currentUser?.id) {
       navigate('/dashboard');
     }
 
-    // if (isAuthRoute) {
-    //   logout();
-    // }
-  }, [location.pathname]);
+    if (!isAuthenticated && !isPublic) {
+      logout();
+    }
+  }, [location.pathname, isAuthenticated]);
 
-  return isAuthenticated && currentUser?.id ? <Outlet /> : <Navigate to="/" />;
+  if (!isAuthenticated && !isPublic) {
+    return <Navigate to="/" />;
+  }
+
+  // return isAuthenticated && currentUser?.id ? <Outlet /> : <Navigate to="/" />;
+  return <Outlet />;
 };
 
 export default AuthGuard;

@@ -10,7 +10,7 @@ const Loader: React.FC<LoaderProps> = ({ className }) => {
     <>
       <span
         className={cn(
-          'w-7 h-7 border-4 border-white border-b-transparent rounded-full inline-block loader-animation',
+          'w-5 h-5 border-4 border-white border-b-transparent rounded-full inline-block loader-animation',
           className
         )}
       ></span>

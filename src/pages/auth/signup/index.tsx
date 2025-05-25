@@ -40,7 +40,7 @@ const Signup = () => {
         description: response?.data.message,
       });
       reset();
-      navigate(`/login`);
+      navigate(`/`);
     },
   });
 

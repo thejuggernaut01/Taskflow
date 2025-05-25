@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,16 +27,22 @@ import { ITask } from '@/interface/task.interface';
 import DeleteTask from './delete-task';
 import TaskCreationForm from './task-creation-form';
 import TaskCard from './task-card';
-import { INITIAL_TASKS } from '@/data/tasks';
+import { updateTask, useTasks } from '@/services/task.service';
+import ReactLoading from 'react-loading';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 const STATUS_COLUMN = {
-  todo: { title: 'To Do', color: 'bg-gray-50' },
-  inprogress: { title: 'In Progress', color: 'bg-blue-50' },
-  done: { title: 'Done', color: 'bg-green-50' },
+  ToDo: { title: 'ToDo', color: 'bg-gray-50' },
+  InProgress: { title: 'InProgress', color: 'bg-blue-50' },
+  Done: { title: 'Done', color: 'bg-green-50' },
 };
 
 export default function Home() {
-  const [tasks, setTasks] = useState<ITask[]>(INITIAL_TASKS);
+  const { tasks, isLoading } = useTasks();
+  const abortControllersRef = useRef<Record<string, AbortController>>({});
+
+  const queryClient = useQueryClient();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -44,9 +50,9 @@ export default function Home() {
   const [isEditTaskOpen, setIsEditTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<ITask | null>(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-  const [taskToDelete, setTaskToDelete] = useState<ITask | null>(null);
+  const [taskToDeleteId, setTaskToDeleteId] = useState('');
 
-  const filteredTasks = tasks.filter((task) => {
+  const filteredTasks = tasks?.filter((task) => {
     const matchesSearch =
       task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       task.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -57,64 +63,75 @@ export default function Home() {
     return matchesSearch && matchesPriority && matchesStatus;
   });
 
+  const { mutate: mutateUpdateStatus } = useMutation({
+    mutationFn: updateTask,
+
+    onMutate: async ({ id, body }) => {
+      // Cancel any ongoing fetches
+      await queryClient.cancelQueries({
+        queryKey: ['tasks'],
+      });
+
+      // Save previous state to rollback later
+      const previousTasks = queryClient.getQueryData<ITask[]>(['tasks']);
+
+      // Optimistically update
+      queryClient.setQueryData<ITask[]>(['tasks'], (old = []) =>
+        old.map((task) =>
+          task.id === id ? { ...task, status: body.status ?? 'ToDo' } : task
+        )
+      );
+
+      return { previousTasks };
+    },
+
+    onError: (_, __, context) => {
+      // Rollback if failed
+      if (context?.previousTasks) {
+        queryClient.setQueryData(['tasks'], context.previousTasks);
+      }
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['tasks'],
+      });
+    },
+  });
+
   const onDragEnd = (result: any) => {
     if (!result.destination) return;
 
     const { source, destination, draggableId } = result;
 
-    // If dropped in the same position, do nothing
     if (
       source.droppableId === destination.droppableId &&
       source.index === destination.index
     )
       return;
 
-    // Find the task being dragged by its ID
-    const draggedTask = tasks.find((task) => task.id === draggableId);
-    if (!draggedTask) return;
+    const task = tasks?.find((t) => t.id === draggableId);
+    if (!task) return;
 
-    // Create a new array of tasks
-    const newTasks = [...tasks];
+    const newStatus = destination.droppableId;
 
-    // Update the status of the dragged task
-    const updatedTask = {
-      ...draggedTask,
-      status: destination.droppableId as 'todo' | 'inprogress' | 'done',
-    };
+    // Optimistically update state if needed here (you already use setTasks)
 
-    // Replace the task in the array
-    const taskIndex = newTasks.findIndex((task) => task.id === draggableId);
-    if (taskIndex !== -1) {
-      newTasks[taskIndex] = updatedTask;
+    // Cancel previous controller for this task if it exists
+    if (abortControllersRef.current[draggableId]) {
+      abortControllersRef.current[draggableId].abort();
     }
 
-    setTasks(newTasks);
-  };
+    // Create a new controller for the current drag
+    const controller = new AbortController();
+    abortControllersRef.current[draggableId] = controller;
 
-  const createTask = (taskData: Partial<ITask>) => {
-    const newTask: ITask = {
-      id: Date.now().toString(),
-      title: taskData.title || '',
-      description: taskData.description || '',
-      status: taskData.status || 'todo',
-      priority: taskData.priority || 'medium',
-      assignee: taskData.assignee || '',
-      dueDate: taskData.dueDate || '',
-      labels: taskData.labels || [],
-    };
-    setTasks([...tasks, newTask]);
-    setIsCreateTaskOpen(false);
-  };
-
-  const editTask = (taskData: Partial<ITask>) => {
-    if (!editingTask) return;
-
-    const updatedTasks = tasks.map((task) =>
-      task.id === editingTask.id ? { ...task, ...taskData } : task
-    );
-    setTasks(updatedTasks);
-    setIsEditTaskOpen(false);
-    setEditingTask(null);
+    // Trigger mutation
+    mutateUpdateStatus({
+      id: draggableId,
+      body: { status: newStatus },
+      signal: controller.signal,
+    });
   };
 
   const duplicateTask = (task: ITask) => {
@@ -123,15 +140,10 @@ export default function Home() {
       id: Date.now().toString(),
       title: `${task.title} (Copy)`,
     };
-    setTasks([...tasks, duplicatedTask]);
-  };
 
-  const deleteTask = () => {
-    if (!taskToDelete) return;
+    console.log(duplicatedTask);
 
-    setTasks(tasks.filter((task) => task.id !== taskToDelete.id));
-    setIsDeleteConfirmOpen(false);
-    setTaskToDelete(null);
+    // setTasks([...tasks, duplicatedTask]);
   };
 
   const handleEditTask = (task: ITask) => {
@@ -139,15 +151,23 @@ export default function Home() {
     setIsEditTaskOpen(true);
   };
 
-  const handleDeleteTask = (task: ITask) => {
-    setTaskToDelete(task);
+  const handleDeleteTask = (taskId: string) => {
+    setTaskToDeleteId(taskId);
     setIsDeleteConfirmOpen(true);
   };
 
   // Get tasks for each status column
   const getTasksForStatus = (status: string) => {
-    return filteredTasks.filter((task) => task.status === status);
+    return filteredTasks?.filter((task) => task.status === status);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col justify-center items-center space-y-3 h-screen">
+        <ReactLoading type="spin" color="#194095" height={40} width={40} />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -272,7 +292,7 @@ export default function Home() {
                               {column.title}
                             </h3>
                             <Badge variant="secondary" className="text-xs">
-                              {statusTasks.length}
+                              {statusTasks?.length}
                             </Badge>
                           </div>
 
@@ -289,7 +309,7 @@ export default function Home() {
                                 style={{ maxHeight: 'calc(100vh - 280px)' }}
                               >
                                 <div className="space-y-3">
-                                  {statusTasks.map((task, index) => (
+                                  {statusTasks?.map((task, index) => (
                                     <Draggable
                                       key={task.id}
                                       draggableId={task.id}
@@ -337,12 +357,11 @@ export default function Home() {
         </div>
       </div>
 
-      {isDeleteConfirmOpen && taskToDelete && (
+      {isDeleteConfirmOpen && taskToDeleteId && (
         <DeleteTask
           isDeleteConfirmOpen={isDeleteConfirmOpen}
           setIsDeleteConfirmOpen={setIsDeleteConfirmOpen}
-          taskToDelete={taskToDelete}
-          onDeleteTask={deleteTask}
+          taskToDeleteId={taskToDeleteId}
         />
       )}
 
@@ -352,12 +371,14 @@ export default function Home() {
             <DialogHeader>
               <DialogTitle>Create New Task</DialogTitle>
             </DialogHeader>
-            {isCreateTaskOpen && <TaskCreationForm onSubmit={createTask} />}
+            {isCreateTaskOpen && (
+              <TaskCreationForm setIsCreateTaskOpen={setIsCreateTaskOpen} />
+            )}
           </DialogContent>
         </Dialog>
       )}
 
-      {isEditTaskOpen && editingTask && (
+      {isEditTaskOpen && (
         <Dialog open={isEditTaskOpen} onOpenChange={setIsEditTaskOpen}>
           <DialogContent className="sm:max-w-lg mx-4">
             <DialogHeader>
@@ -365,9 +386,9 @@ export default function Home() {
             </DialogHeader>
             {isEditTaskOpen && (
               <TaskCreationForm
-                onSubmit={editTask}
                 initialData={editingTask}
                 submitLabel="Update Task"
+                setIsCreateTaskOpen={setIsEditTaskOpen}
               />
             )}
           </DialogContent>
@@ -376,3 +397,37 @@ export default function Home() {
     </>
   );
 }
+
+// const onDragEnd = (result: any) => {
+//   if (!result.destination) return;
+
+//   const { source, destination, draggableId } = result;
+
+//   // If dropped in the same position, do nothing
+//   if (
+//     source.droppableId === destination.droppableId &&
+//     source.index === destination.index
+//   )
+//     return;
+
+//   // Find the task being dragged by its ID
+//   const draggedTask = tasks?.find((task) => task.id === draggableId);
+//   if (!draggedTask) return;
+
+//   // Create a new array of tasks
+//   const newTasks = [...tasks];
+
+//   // Update the status of the dragged task
+//   const updatedTask = {
+//     ...draggedTask,
+//     status: destination.droppableId as TaskStatusTypes,
+//   };
+
+//   // Replace the task in the array
+//   const taskIndex = newTasks.findIndex((task) => task.id === draggableId);
+//   if (taskIndex !== -1) {
+//     newTasks[taskIndex] = updatedTask;
+//   }
+
+//   setTasks(newTasks);
+// };

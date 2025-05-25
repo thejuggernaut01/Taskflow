@@ -1,7 +1,4 @@
-
-
 class BaseHelper {
-  
   static excludeMatchingItems<T, K extends keyof T>(
     array: T[] | undefined,
     key: K,
@@ -20,15 +17,33 @@ class BaseHelper {
       .map((word) => word[0])
       .join('');
   }
-
-  
-
   static formatDate(date: Date | string) {
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
     });
+  }
+
+  static formatDateWithTime(dateString: string | Date) {
+    const date = new Date(dateString);
+
+    const options: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    };
+
+    const formattedDate = date.toLocaleString('en-US', options);
+    return formattedDate
+      .replace(',', '')
+      .replace('AM', 'AM')
+      .replace('PM', 'PM')
+      .replace(' at', '');
   }
 
   static formatTimestamp(timestamp: string) {
@@ -47,8 +62,6 @@ class BaseHelper {
 
     return `${day}-${month}-${year} ${String(hours).padStart(2, '0')}:${minutes}:${seconds}${amPm}`;
   }
-
-  
 }
 
 export default BaseHelper;

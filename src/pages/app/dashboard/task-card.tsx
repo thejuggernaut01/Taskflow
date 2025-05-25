@@ -1,28 +1,21 @@
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-// import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-// import {
-//   DropdownMenu,
-//   DropdownMenuContent,
-//   DropdownMenuItem,
-//   DropdownMenuTrigger,
-// } from '@/components/ui/dropdown-menu';
 import { ITask } from '@/interface/task.interface';
+import BaseHelper from '@/utils/helper';
 import { Calendar, Edit, Flag, Trash } from 'lucide-react';
 
 type TaskCardProps = {
   task: ITask;
   onEdit: (task: ITask) => void;
   onDuplicate: (task: ITask) => void;
-  onDelete: (task: ITask) => void;
+  onDelete: (taskId: string) => void;
 };
 
 const priorityColors = {
-  low: 'bg-blue-100 text-blue-800 border-blue-200',
-  medium: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  high: 'bg-orange-100 text-orange-800 border-orange-200',
-  urgent: 'bg-red-100 text-red-800 border-red-200',
+  Low: 'bg-blue-100 text-blue-800 border-blue-200',
+  Medium: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+  High: 'bg-orange-100 text-orange-800 border-orange-200',
+  Urgent: 'bg-red-100 text-red-800 border-red-200',
 };
 
 const TaskCard: React.FC<TaskCardProps> = ({
@@ -48,7 +41,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
               <Clipboard size={17} />
             </button> */}
 
-            <button onClick={() => onDelete(task)}>
+            <button onClick={() => onDelete(task.id)}>
               <Trash className="text-red-500" size={17} />
             </button>
           </div>
@@ -68,7 +61,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
             </Badge>
             <div className="flex items-center text-xs text-gray-500">
               <Calendar className="w-3 h-3 mr-1" />
-              <span className="truncate">{task.dueDate}</span>
+              <span className="truncate">
+                {BaseHelper.formatDateWithTime(task.dueDate)}
+              </span>
             </div>
           </div>
 
@@ -85,14 +80,14 @@ const TaskCard: React.FC<TaskCardProps> = ({
                 </Badge>
               )}
             </div>
-            <Avatar className="w-6 h-6 flex-shrink-0">
+            {/* <Avatar className="w-6 h-6 flex-shrink-0">
               <AvatarFallback className="text-xs">
                 {task.assignee
                   .split(' ')
                   .map((n) => n[0])
                   .join('')}
               </AvatarFallback>
-            </Avatar>
+            </Avatar> */}
           </div>
         </div>
       </CardContent>
